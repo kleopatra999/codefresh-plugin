@@ -14,6 +14,7 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import org.kohsuke.stapler.QueryParameter;
 
 /**
@@ -36,31 +37,32 @@ import org.kohsuke.stapler.QueryParameter;
 public class CodefreshBuilder extends Builder {
 
     private final boolean launch;
-    private final String serviceName;
+    private final String cfService;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public CodefreshBuilder(String serviceName, Boolean launch) {
+    public CodefreshBuilder(String cfService, Boolean launch) {
         this.launch = launch;
-        this.serviceName = serviceName;
+        this.cfService = cfService;
     }
 
     /**
      * We'll use this from the <tt>config.jelly</tt>.
+     * @return 
      */
     public boolean getLaunch() {
         return launch;
     }
 
-    public String getService() {
-        return serviceName;
+    public String getCfService() {
+        return cfService;
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException {
 
       CFProfile profile  = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
-      String id = profile.getServiceIdByName(serviceName);
+      String id = profile.getServiceIdByName(cfService);
       CFApi api = new CFApi(getDescriptor().getCfToken());
       String buildId = api.startBuild(id);
       return true;
@@ -84,8 +86,8 @@ public class CodefreshBuilder extends Builder {
          */
         private String cfUser;
         private Secret cfToken;
-        private String cfService;
-        private String cfRepoName;
+       // private String cfService;
+       // private String cfRepoName;
         private CFApi api;
 
      
@@ -117,7 +119,7 @@ public class CodefreshBuilder extends Builder {
             // set that to properties and call save().
             cfUser = formData.getString("cfUser");
             cfToken = Secret.fromString(formData.getString("cfToken"));
-            cfRepoName = formData.getString("cfRepoName");
+       //     cfService = formData.getString("cfService");
 
             // ^Can also use req.bindJSON(this, formData);
             //  (easier when there are many fields; need set* methods for this, like setUseFrench)
@@ -130,18 +132,18 @@ public class CodefreshBuilder extends Builder {
             return cfUser;
         }
 
-         public String getCfService() {
-            return cfService;
-        }
+//         public String getCfService() {
+//            return cfService;
+//        }
         
-        public String getCfRepoName() {
-            return cfRepoName;
-        }
+//        public String getCfRepoName() {
+//            return cfRepoName;
+//        }
         public Secret getCfToken() {
             return cfToken;
         }
         
-        public ListBoxModel doFillServiceNameItems(@QueryParameter("serviceName") String serviceName)) throws  IOException, MalformedURLException {
+        public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
          //   CFProfile profile = new CFProfile(cfUser,cfToken,cfRepoName);
             try {
@@ -149,7 +151,7 @@ public class CodefreshBuilder extends Builder {
                 for (CFService srv: api.getServices())
                 {
                     String name = srv.getName();
-                    items.add(new Option(name, name, serviceName.equals(name)));
+                    items.add(new Option(name, name, cfService.equals(name)));
 
                 }
             }

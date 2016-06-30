@@ -21,10 +21,10 @@
       description="Enter Codefresh authorization token">
       <f:password />
     </f:entry>
-     <f:entry title="RepoName" field="cfRepoName"
+     <!-- f:entry title="RepoName" field="cfRepoName"
       description="Enter repository name">
       <f:textbox />
-    </f:entry>
+    </f:entry -->
     <f:validateButton title="Test Connection" progress="Testing.." method="testConnection" with="cfToken" />
   </f:section>
 </j:jelly>

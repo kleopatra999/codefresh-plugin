@@ -10,7 +10,7 @@
     Creates a text field that shows the value of the "name" property.
     When submitted, it will be passed to the corresponding constructor parameter.
   -->
-  <f:entry field="serviceName" title="Choose Codefresh service">
+  <f:entry field="cfService" title="Choose Codefresh service">
     <f:select />
  </f:entry>
 
