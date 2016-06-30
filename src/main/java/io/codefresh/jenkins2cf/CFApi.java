@@ -120,7 +120,7 @@ public class CFApi {
         outs.flush();
 
         InputStream is = conn.getInputStream();
-        return is.toString();
+        return IOUtils.toString(is);
     }
 
     public HttpsURLConnection getConnection(String urlString) throws MalformedURLException, IOException {
@@ -134,8 +134,35 @@ public class CFApi {
         conn.setUseCaches(false);
         conn.setDoOutput(true);
         conn.setDoInput(true);
-        conn.setFollowRedirects(true);
+        HttpsURLConnection.setFollowRedirects(true);
         conn.setInstanceFollowRedirects(true);
         return conn;
+    }
+
+    String getBuildProgress(String buildId) throws IOException {
+        String buildUrl = httpsUrl + "/builds/" + buildId;
+        HttpsURLConnection conn = getConnection(buildUrl);
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonObject build = new JsonParser().parse(jsonString).getAsJsonObject();
+        String progress = build.get("progress_id").getAsString();
+        return progress;
+    }
+
+    String getProgressStatus(String progressId) throws IOException {
+        String progressUrl = httpsUrl + "/progress/" + progressId;
+        HttpsURLConnection conn = getConnection(progressUrl);
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
+        String status = progress.get("status").getAsString();
+        return status;
+    }
+
+    String getBuildUrl(String progressId) throws IOException {
+        String buildUrl = "https://g.codefresh.io" + "/process/" + progressId;
+        return buildUrl;
     }
 }

@@ -14,6 +14,7 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import java.io.IOException;
+import static java.lang.Thread.sleep;
 import java.net.MalformedURLException;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -59,14 +60,37 @@ public class CodefreshBuilder extends Builder {
     }
 
     @Override
-    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException {
+    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
 
       CFProfile profile  = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
-      String id = profile.getServiceIdByName(cfService);
+      String serviceId = profile.getServiceIdByName(cfService);
       CFApi api = new CFApi(getDescriptor().getCfToken());
-      String buildId = api.startBuild(id);
-      return true;
-  }
+      String buildId = api.startBuild(serviceId);
+      String progressId = api.getBuildProgress(buildId);
+      String status = api.getProgressStatus(progressId);
+      String progressUrl = api.getBuildUrl(progressId);
+      while (status.equals("running"))
+      {
+          listener.getLogger().println("Codefresh build running - "+progressUrl+"\n Waiting 5 seconds...");
+          Thread.sleep(5 * 1000);
+          status = api.getProgressStatus(progressId);
+      }
+      build.addAction(new CodefreshAction(progressUrl));
+      switch (status) {
+          case "success":
+              listener.getLogger().println("Codefresh build successfull!");
+              return true;
+          case "error":
+              listener.getLogger().println("Codefresh build failed!");
+              return false;
+          default:
+              listener.getLogger().println("Codefresh status "+status+" unclassified.");
+              return false;
+      }
+      
+    }
+     
+  
 
  
     @Override
