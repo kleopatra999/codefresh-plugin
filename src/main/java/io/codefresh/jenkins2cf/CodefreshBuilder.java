@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
+import hudson.model.BuildBadgeAction;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.util.FormValidation;
@@ -64,6 +65,7 @@ public class CodefreshBuilder extends Builder {
 
       CFProfile profile  = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
       String serviceId = profile.getServiceIdByName(cfService);
+      
       CFApi api = new CFApi(getDescriptor().getCfToken());
       String buildId = api.startBuild(serviceId);
       String progressId = api.getBuildProgress(buildId);
@@ -75,7 +77,8 @@ public class CodefreshBuilder extends Builder {
           Thread.sleep(5 * 1000);
           status = api.getProgressStatus(progressId);
       }
-      build.addAction(new CodefreshAction(progressUrl));
+      //build.addAction(new CodefreshAction(progressUrl));
+      build.addAction(new CodefreshBuildBadgeAction(progressUrl));
       switch (status) {
           case "success":
               listener.getLogger().println("Codefresh build successfull!");
@@ -187,4 +190,31 @@ public class CodefreshBuilder extends Builder {
         }
 
     }
+    
+    public static class CodefreshBuildBadgeAction implements BuildBadgeAction {
+
+        private final String buildUrl;
+
+        public CodefreshBuildBadgeAction(String buildUrl) {
+            super();
+            this.buildUrl = buildUrl;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Codefresh Build Page";
+        }
+
+        @Override
+        public String getIconFileName() {
+            return "/plugin/jenkins2cf/images/codefresh.png";
+        }
+
+        @Override
+        public String getUrlName() {
+            return buildUrl;
+        }
+
+    }
+
 }
