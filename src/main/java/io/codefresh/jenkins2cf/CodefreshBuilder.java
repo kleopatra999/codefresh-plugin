@@ -5,6 +5,8 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
 import hudson.model.BuildBadgeAction;
+import hudson.plugins.git.GitSCM;
+import hudson.scm.SCM;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.util.FormValidation;
@@ -17,37 +19,46 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.IOException;
 import static java.lang.Thread.sleep;
 import java.net.MalformedURLException;
+import java.util.List;
+import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.URIish;
 import org.kohsuke.stapler.QueryParameter;
 
-/**
- * Sample {@link Builder}.
- *
- * <p>
- * When the user configures the project and enables this builder,
- * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked
- * and a new {@link CodefreshBuilder} is created. The created
- * instance is persisted to the project configuration XML by using
- * XStream, so this allows you to use instance fields (like {@link #name})
- * to remember the configuration.
- *
- * <p>
- * When a build is performed, the {@link #perform(AbstractBuild, Launcher, BuildListener)}
- * method will be invoked.
- *
- * @author Kohsuke Kawaguchi
- */
+
 public class CodefreshBuilder extends Builder {
 
     private final boolean launch;
     private final String cfService;
+    private final boolean selectService;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public CodefreshBuilder(String cfService, Boolean launch) {
+    public CodefreshBuilder(Boolean launch, selectService selectService) {
         this.launch = launch;
-        this.cfService = cfService;
+    
+        if (selectService != null) {
+            this.cfService = selectService.cfService;
+            this.selectService = true;
+        }
+        else
+        {
+            this.selectService = false; 
+            this.cfService = null;
+        }
+
     }
 
+    public static class selectService
+    {
+        private final String cfService;
+
+        @DataBoundConstructor
+        public selectService(String cfService)
+        {
+            this.cfService = cfService;
+        }
+    }
+    
     /**
      * We'll use this from the <tt>config.jelly</tt>.
      * @return 
@@ -59,13 +70,38 @@ public class CodefreshBuilder extends Builder {
     public String getCfService() {
         return cfService;
     }
+    
+    public boolean isSelectService(){
+        return selectService;
+    } 
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
 
       CFProfile profile  = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
-      String serviceId = profile.getServiceIdByName(cfService);
-      
+      String serviceId = "";
+      if (cfService == null)
+      {
+        SCM scm = build.getProject().getScm();
+        if (!(scm instanceof GitSCM)) {
+            return false;
+        }
+    
+        final GitSCM gitSCM = (GitSCM) scm;
+        RemoteConfig remote = gitSCM.getRepositories().get(0);
+        URIish uri = remote.getURIs().get(0);
+        String gitPath = uri.getPath();
+        serviceId = profile.getServiceIdByPath(gitPath);
+        listener.getLogger().println("riggering Codefresh build. Service: "+gitPath+".\n");
+          
+      }
+      else
+      {
+        
+       serviceId = profile.getServiceIdByName(cfService);
+        listener.getLogger().println("\nTriggering Codefresh build. Service: "+cfService+".\n");
+       
+      }
       CFApi api = new CFApi(getDescriptor().getCfToken());
       String buildId = api.startBuild(serviceId);
       String progressId = api.getBuildProgress(buildId);
@@ -113,8 +149,6 @@ public class CodefreshBuilder extends Builder {
          */
         private String cfUser;
         private Secret cfToken;
-       // private String cfService;
-       // private String cfRepoName;
         private CFApi api;
 
      
@@ -170,9 +204,13 @@ public class CodefreshBuilder extends Builder {
             return cfToken;
         }
         
+       
         public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
          //   CFProfile profile = new CFProfile(cfUser,cfToken,cfRepoName);
+            if (cfToken == null){
+                throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
+            }
             try {
                 api = new CFApi(cfToken);
                 for (CFService srv: api.getServices())

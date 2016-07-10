@@ -53,5 +53,20 @@ public class CFProfile {
         }
         return null;
     }
+    
+    String getServiceIdByPath(String gitPath) {
+        String repoOwner = gitPath.split("/")[1];
+        String serviceName = gitPath.split("/")[2].split("\\.")[0];
+        if (repoOwner.equals(cfUser))
+        {        
+            for (CFService service: services){
+                if (service.getName().equals(serviceName))
+                {
+                    return service.getId();
+                }
+            }
+        }
+        return null;
+    }
    
 }
