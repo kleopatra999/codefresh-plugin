@@ -114,7 +114,7 @@ public class CodefreshBuilder extends Builder {
           status = api.getProgressStatus(progressId);
       }
       //build.addAction(new CodefreshAction(progressUrl));
-      build.addAction(new CodefreshBuildBadgeAction(progressUrl));
+      build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
       switch (status) {
           case "success":
               listener.getLogger().println("Codefresh build successfull!");
@@ -232,10 +232,26 @@ public class CodefreshBuilder extends Builder {
     public static class CodefreshBuildBadgeAction implements BuildBadgeAction {
 
         private final String buildUrl;
-
-        public CodefreshBuildBadgeAction(String buildUrl) {
+        private final String buildStatus;
+        private final String iconFile;
+        
+        public CodefreshBuildBadgeAction(String buildUrl, String buildStatus) {
             super();
             this.buildUrl = buildUrl;
+            this.buildStatus = buildStatus;
+                switch (buildStatus) {
+                    case "success":
+                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_green.png";
+                        break;
+                    case "unstable":
+                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_yellow.png";
+                        break;
+                    case "error":
+                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_red.png";
+                        break;
+                    default:
+                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_green.png";
+                }
         }
 
         @Override
@@ -245,7 +261,7 @@ public class CodefreshBuilder extends Builder {
 
         @Override
         public String getIconFileName() {
-            return "/plugin/jenkins2cf/images/codefresh.png";
+            return iconFile;
         }
 
         @Override
