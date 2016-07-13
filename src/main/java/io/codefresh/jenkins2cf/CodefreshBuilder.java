@@ -31,7 +31,6 @@ public class CodefreshBuilder extends Builder {
     private final String cfService;
     private final boolean selectService;
 
-    // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public CodefreshBuilder(Boolean launch, selectService selectService) {
         this.launch = launch;
@@ -59,10 +58,6 @@ public class CodefreshBuilder extends Builder {
         }
     }
     
-    /**
-     * We'll use this from the <tt>config.jelly</tt>.
-     * @return 
-     */
     public boolean isLaunch() {
         return launch;
     }
@@ -92,7 +87,7 @@ public class CodefreshBuilder extends Builder {
         URIish uri = remote.getURIs().get(0);
         String gitPath = uri.getPath();
         serviceId = profile.getServiceIdByPath(gitPath);
-        listener.getLogger().println("riggering Codefresh build. Service: "+gitPath+".\n");
+        listener.getLogger().println("\nTriggering Codefresh build. Service: "+gitPath+".\n");
           
       }
       else
@@ -140,13 +135,6 @@ public class CodefreshBuilder extends Builder {
     
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-        /**
-         * To persist global configuration information,
-         * simply store it in a field and call save().
-         *
-         * <p>
-         * If you don't want fields to be persisted, use <tt>transient</tt>.
-         */
         private String cfUser;
         private Secret cfToken;
         private CFApi api;
@@ -180,10 +168,6 @@ public class CodefreshBuilder extends Builder {
             // set that to properties and call save().
             cfUser = formData.getString("cfUser");
             cfToken = Secret.fromString(formData.getString("cfToken"));
-       //     cfService = formData.getString("cfService");
-
-            // ^Can also use req.bindJSON(this, formData);
-            //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
             return super.configure(req,formData);
         }
@@ -193,13 +177,6 @@ public class CodefreshBuilder extends Builder {
             return cfUser;
         }
 
-//         public String getCfService() {
-//            return cfService;
-//        }
-        
-//        public String getCfRepoName() {
-//            return cfRepoName;
-//        }
         public Secret getCfToken() {
             return cfToken;
         }
@@ -207,7 +184,6 @@ public class CodefreshBuilder extends Builder {
        
         public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
-         //   CFProfile profile = new CFProfile(cfUser,cfToken,cfRepoName);
             if (cfToken == null){
                 throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
             }

@@ -6,19 +6,15 @@
 package io.codefresh.jenkins2cf;
 
 import hudson.util.Secret;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  *
  * @author antweiss
  */
 public class CFService {
-    private String name;
-    private String id;
-    private Secret cfToken;
+    private final String name;
+    private final String id;
+    private final Secret cfToken;
 
     public CFService(Secret cfToken, String gitRepo, String id) {
         this.name = gitRepo;
