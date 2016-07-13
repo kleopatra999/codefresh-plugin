@@ -27,7 +27,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 public class CodefreshBuilder extends Builder {
 
-    private final boolean launch;
+    private boolean launch;
     private final String cfService;
     private final boolean selectService;
 
@@ -63,7 +63,7 @@ public class CodefreshBuilder extends Builder {
      * We'll use this from the <tt>config.jelly</tt>.
      * @return 
      */
-    public boolean getLaunch() {
+    public boolean isLaunch() {
         return launch;
     }
 

@@ -12,7 +12,7 @@
   -->
  
   <f:entry title="Launch Codefresh Build" field="launch">
-    <f:checkbox />
+    <f:checkbox  default="true"/>
   </f:entry>
   <f:optionalBlock name="selectService" title="Choose service to launch" checked="${instance.selectService}">
     <f:entry field="cfService" title="Choose Codefresh service">
