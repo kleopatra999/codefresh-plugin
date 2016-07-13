@@ -1,4 +1,4 @@
-![Codefresh Logo](/src/main/webapp/images/16x16/leaves_green.png?raw=true "Codefresh")
+![Codefresh Logo](/src/main/webapp/images/24x24/leaves_green.png?raw=true "Codefresh")
 
 [Codefresh](http://g.codefresh.io) Plugin for Jenkins
 
