@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.codefresh.jenkins2cf;
+package org.jenkinsci.plugins.codefresh;
 
 import hudson.util.Secret;
 
@@ -29,5 +29,5 @@ public class CFService {
     public String getId() {
         return id;
     }
-    
+
 }

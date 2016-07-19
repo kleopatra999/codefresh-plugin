@@ -1,4 +1,5 @@
-package io.codefresh.jenkins2cf;
+package org.jenkinsci.plugins.codefresh;
+
 
 import hudson.model.Action;
 
@@ -30,4 +31,3 @@ public class CodefreshAction implements Action {
 		return buildUrl;
 	}
 }
-

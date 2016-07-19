@@ -15,12 +15,8 @@
             <organizationUrl>http://otomato.link</organizationUrl>
         </developer>
     </developers>
-    
-    <organization>
-        <name>Codehaus Mojo</name>
-        <url>http://mojo.codehaus.org</url>
-    </organization>
-    
+
+
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
@@ -77,14 +73,13 @@
             <type>jar</type>
         </dependency>
     </dependencies>
-    
-    <groupId>io.codefresh</groupId>
-    <artifactId>jenkins2cf</artifactId>
+
+    <artifactId>codefresh</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Jenkins pluign for Codefresh Integration</name>
     <description>Trigger Codefresh Pipelines from Codefresh</description>
-    
+
     <licenses>
         <license>
             <name>GNU General Public License (GPL)</name>

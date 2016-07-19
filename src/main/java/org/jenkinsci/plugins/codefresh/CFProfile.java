@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.codefresh.jenkins2cf;
+ package org.jenkinsci.plugins.codefresh;
 
 import hudson.util.Secret;
 import java.io.IOException;
@@ -26,15 +26,15 @@ public class CFProfile {
         this.api = new CFApi(this.cfToken);
         this.services = api.getServices();
     }
-    
+
     public String getUser(){
         return this.cfUser;
     }
-    
+
     public Secret getToken(){
         return this.cfToken;
     }
-    
+
     public int testConnection() throws IOException{
         api = new CFApi(cfToken);
         if ( api.getConnection("") == null )
@@ -53,12 +53,12 @@ public class CFProfile {
         }
         return null;
     }
-    
+
     String getServiceIdByPath(String gitPath) {
         String repoOwner = gitPath.split("/")[1];
         String serviceName = gitPath.split("/")[2].split("\\.")[0];
         if (repoOwner.equals(cfUser))
-        {        
+        {
             for (CFService service: services){
                 if (service.getName().equals(serviceName))
                 {
@@ -68,5 +68,5 @@ public class CFProfile {
         }
         return null;
     }
-   
+
 }

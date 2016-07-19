@@ -1,4 +1,5 @@
-package io.codefresh.jenkins2cf;
+package org.jenkinsci.plugins.codefresh;
+
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
@@ -34,14 +35,14 @@ public class CodefreshBuilder extends Builder {
     @DataBoundConstructor
     public CodefreshBuilder(Boolean launch, selectService selectService) {
         this.launch = launch;
-    
+
         if (selectService != null) {
             this.cfService = selectService.cfService;
             this.selectService = true;
         }
         else
         {
-            this.selectService = false; 
+            this.selectService = false;
             this.cfService = null;
         }
 
@@ -57,7 +58,7 @@ public class CodefreshBuilder extends Builder {
             this.cfService = cfService;
         }
     }
-    
+
     public boolean isLaunch() {
         return launch;
     }
@@ -65,10 +66,10 @@ public class CodefreshBuilder extends Builder {
     public String getCfService() {
         return cfService;
     }
-    
+
     public boolean isSelectService(){
         return selectService;
-    } 
+    }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
@@ -81,21 +82,21 @@ public class CodefreshBuilder extends Builder {
         if (!(scm instanceof GitSCM)) {
             return false;
         }
-    
+
         final GitSCM gitSCM = (GitSCM) scm;
         RemoteConfig remote = gitSCM.getRepositories().get(0);
         URIish uri = remote.getURIs().get(0);
         String gitPath = uri.getPath();
         serviceId = profile.getServiceIdByPath(gitPath);
         listener.getLogger().println("\nTriggering Codefresh build. Service: "+gitPath+".\n");
-          
+
       }
       else
       {
-        
+
        serviceId = profile.getServiceIdByName(cfService);
         listener.getLogger().println("\nTriggering Codefresh build. Service: "+cfService+".\n");
-       
+
       }
       CFApi api = new CFApi(getDescriptor().getCfToken());
       String buildId = api.startBuild(serviceId);
@@ -121,26 +122,26 @@ public class CodefreshBuilder extends Builder {
               listener.getLogger().println("Codefresh status "+status+" unclassified.");
               return false;
       }
-      
-    }
-     
-  
 
- 
+    }
+
+
+
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl)super.getDescriptor();
     }
 
-    
+
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         private String cfUser;
         private Secret cfToken;
         private CFApi api;
 
-     
-        public FormValidation doTestConnection(@QueryParameter("cfToken") final String cfToken) throws IOException 
+
+        public FormValidation doTestConnection(@QueryParameter("cfToken") final String cfToken) throws IOException
         {
              api = new CFApi(Secret.fromString(cfToken));
              if (api.getUser() != null) {
@@ -148,7 +149,7 @@ public class CodefreshBuilder extends Builder {
              }
              return FormValidation.error("Couldn't connect");
         }
-        
+
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             // Indicates that this builder can be used with all kinds of project types
@@ -172,7 +173,7 @@ public class CodefreshBuilder extends Builder {
             return super.configure(req,formData);
         }
 
-        
+
         public String getCfUser() {
             return cfUser;
         }
@@ -180,8 +181,8 @@ public class CodefreshBuilder extends Builder {
         public Secret getCfToken() {
             return cfToken;
         }
-        
-       
+
+
         public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
             if (cfToken == null){
@@ -204,13 +205,13 @@ public class CodefreshBuilder extends Builder {
         }
 
     }
-    
+
     public static class CodefreshBuildBadgeAction implements BuildBadgeAction {
 
         private final String buildUrl;
         private final String buildStatus;
         private final String iconFile;
-        
+
         public CodefreshBuildBadgeAction(String buildUrl, String buildStatus) {
             super();
             this.buildUrl = buildUrl;

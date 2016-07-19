@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.codefresh.jenkins2cf;
+package org.jenkinsci.plugins.codefresh;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -33,15 +33,15 @@ import org.apache.commons.io.IOUtils;
  * @author antweiss
  */
 public class CFApi {
-    
+
     private SSLSocketFactory sf = null;
     private String httpsUrl = "https://g.codefresh.io/api";
     private Secret cfToken;
     private TrustManager[] trustAllCerts;
-    
-    
+
+
     public CFApi(Secret cfToken) throws MalformedURLException, IOException {
-    
+
         this.cfToken = cfToken;
         trustAllCerts = new TrustManager[]{new X509TrustManager(){
             public X509Certificate[] getAcceptedIssuers(){return null;}
@@ -58,9 +58,9 @@ public class CFApi {
         } catch (Exception e) {
             ;
         }
-    
+
     }
-      
+
     public List<CFService> getServices() throws MalformedURLException, IOException
     {
         String serviceUrl = httpsUrl + "/services";
@@ -83,7 +83,7 @@ public class CFApi {
         }
         return services;
     }
-    
+
     public String getUser() throws MalformedURLException, IOException
     {
         String userUrl = httpsUrl + "/user";
@@ -101,7 +101,7 @@ public class CFApi {
         String jsonString = IOUtils.toString(is);
         return jsonString;
     }
-    
+
     public String startBuild(String serviceId) throws MalformedURLException, IOException
     {
         String buildUrl = httpsUrl + "/builds/" + serviceId ;
@@ -125,7 +125,7 @@ public class CFApi {
 
     public HttpsURLConnection getConnection(String urlString) throws MalformedURLException, IOException {
         if ( urlString.isEmpty())
-        {  
+        {
             urlString = httpsUrl;
         }
         URL connUrl = new URL(urlString);
