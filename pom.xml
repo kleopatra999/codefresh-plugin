@@ -77,8 +77,8 @@
     <artifactId>codefresh</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
-    <name>Jenkins pluign for Codefresh Integration</name>
-    <description>Trigger Codefresh Pipelines from Codefresh</description>
+    <name>Codefresh Integration Plugin</name>
+    <description>Trigger Codefresh Pipelines from Jenkins</description>
 
     <licenses>
         <license>
