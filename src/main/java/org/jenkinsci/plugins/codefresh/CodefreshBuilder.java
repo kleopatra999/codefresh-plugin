@@ -218,16 +218,16 @@ public class CodefreshBuilder extends Builder {
             this.buildStatus = buildStatus;
                 switch (buildStatus) {
                     case "success":
-                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_green.png";
+                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
                         break;
                     case "unstable":
-                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_yellow.png";
+                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_yellow.png";
                         break;
                     case "error":
-                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_red.png";
+                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_red.png";
                         break;
                     default:
-                        this.iconFile = "/plugin/jenkins2cf/images/16x16/leaves_green.png";
+                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
                 }
         }
 
