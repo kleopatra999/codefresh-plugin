@@ -21,6 +21,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -38,6 +40,7 @@ public class CFApi {
     private String httpsUrl = "https://g.codefresh.io/api";
     private Secret cfToken;
     private TrustManager[] trustAllCerts;
+    private static final Logger LOGGER = Logger.getLogger(CFApi.class.getName());
 
 
     public CFApi(Secret cfToken) throws MalformedURLException, IOException {
@@ -56,7 +59,7 @@ public class CFApi {
             this.sf = sc.getSocketFactory();
             HttpsURLConnection.setDefaultSSLSocketFactory(this.sf);
         } catch (Exception e) {
-            ;
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
         }
 
     }
@@ -115,7 +118,7 @@ public class CFApi {
         conn.setFollowRedirects(true);
         conn.setInstanceFollowRedirects(true);
         conn.setRequestMethod("POST");
-        OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream());
+        OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8");
         outs.write("");
         outs.flush();
 

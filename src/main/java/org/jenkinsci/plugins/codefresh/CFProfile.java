@@ -36,12 +36,16 @@ public class CFProfile {
     }
 
     public int testConnection() throws IOException{
-        api = new CFApi(cfToken);
-        if ( api.getConnection("") == null )
-        {
-            return 1;
-        }
-        return 0;
+       api = new CFApi(cfToken);
+       
+       try{
+           api.getConnection("");
+       }
+       catch (Exception e)
+       {
+            throw e;
+       }
+       return 0;
     }
 
     String getServiceIdByName(String serviceName) {
