@@ -16,13 +16,16 @@
         </developer>
     </developers>
 
+    <properties>
+        <jenkins.version>1.651.2</jenkins.version>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
             <artifactId>jenkins-war</artifactId>
             <type>war</type>
-            <version>2.7</version>
+            <version>${jenkins.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
