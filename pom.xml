@@ -84,6 +84,13 @@
     <description>Trigger Codefresh Pipelines from Jenkins</description>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Codefresh+Plugin</url>
 
+    <scm>
+        <connection>scm:git:ssh://github.com/jenkinsci/codefresh-plugin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/jenkinsci/codefresh-plugin.git</developerConnection>
+        <url>https://github.com/jenkinsci/codefresh-plugin</url>
+    </scm>
+
+
     <licenses>
         <license>
 			<name>MIT License</name>
