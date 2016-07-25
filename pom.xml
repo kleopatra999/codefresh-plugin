@@ -82,6 +82,7 @@
     <packaging>hpi</packaging>
     <name>Codefresh Integration Plugin</name>
     <description>Trigger Codefresh Pipelines from Jenkins</description>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/Codefresh+Plugin</url>
 
     <licenses>
         <license>
