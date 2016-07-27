@@ -118,9 +118,16 @@ public class CFApi {
         conn.setFollowRedirects(true);
         conn.setInstanceFollowRedirects(true);
         conn.setRequestMethod("POST");
-        OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8");
-        outs.write("");
-        outs.flush();
+        
+        try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
+            outs.write("");
+            outs.flush();
+        }
+        catch (Exception e)
+        {
+            throw e;
+        }
+
 
         InputStream is = conn.getInputStream();
         return IOUtils.toString(is);

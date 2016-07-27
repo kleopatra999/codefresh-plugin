@@ -33,7 +33,7 @@ public class CodefreshBuilder extends Builder {
     private final boolean selectService;
 
     @DataBoundConstructor
-    public CodefreshBuilder(Boolean launch, selectService selectService) {
+    public CodefreshBuilder(Boolean launch, SelectService selectService) {
         this.launch = launch;
 
         if (selectService != null) {
@@ -48,12 +48,12 @@ public class CodefreshBuilder extends Builder {
 
     }
 
-    public static class selectService
+    public static class SelectService
     {
         private final String cfService;
 
         @DataBoundConstructor
-        public selectService(String cfService)
+        public SelectService(String cfService)
         {
             this.cfService = cfService;
         }
