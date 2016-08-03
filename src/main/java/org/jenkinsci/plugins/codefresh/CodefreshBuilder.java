@@ -6,6 +6,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
 import hudson.model.BuildBadgeAction;
+import hudson.plugins.git.BranchSpec;
 import hudson.plugins.git.GitSCM;
 import hudson.scm.SCM;
 import hudson.tasks.Builder;
@@ -31,6 +32,7 @@ public class CodefreshBuilder extends Builder {
     private boolean launch;
     private final String cfService;
     private final boolean selectService;
+    private final String cfBranch;
 
     @DataBoundConstructor
     public CodefreshBuilder(Boolean launch, SelectService selectService) {
@@ -38,12 +40,14 @@ public class CodefreshBuilder extends Builder {
 
         if (selectService != null) {
             this.cfService = selectService.cfService;
+            this.cfBranch = selectService.cfBranch;
             this.selectService = true;
         }
         else
         {
             this.selectService = false;
             this.cfService = null;
+            this.cfBranch = "";
         }
 
     }
@@ -51,11 +55,13 @@ public class CodefreshBuilder extends Builder {
     public static class SelectService
     {
         private final String cfService;
+        private final String cfBranch;
 
         @DataBoundConstructor
-        public SelectService(String cfService)
+        public SelectService(String cfService, String cfBranch)
         {
             this.cfService = cfService;
+            this.cfBranch = cfBranch;
         }
     }
 
@@ -76,6 +82,8 @@ public class CodefreshBuilder extends Builder {
 
       CFProfile profile  = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
       String serviceId = "";
+      String branch = "";
+      
       if (cfService == null)
       {
         SCM scm = build.getProject().getScm();
@@ -84,6 +92,7 @@ public class CodefreshBuilder extends Builder {
         }
 
         final GitSCM gitSCM = (GitSCM) scm;
+        branch = gitSCM.getBranches().get(0).getName().replaceFirst("\\*\\/", "");
         RemoteConfig remote = gitSCM.getRepositories().get(0);
         URIish uri = remote.getURIs().get(0);
         String gitPath = uri.getPath();
@@ -94,12 +103,13 @@ public class CodefreshBuilder extends Builder {
       else
       {
 
-       serviceId = profile.getServiceIdByName(cfService);
+        serviceId = profile.getServiceIdByName(cfService);
+        branch  = cfBranch;
         listener.getLogger().println("\nTriggering Codefresh build. Service: "+cfService+".\n");
 
       }
       CFApi api = new CFApi(getDescriptor().getCfToken());
-      String buildId = api.startBuild(serviceId);
+      String buildId = api.startBuild(serviceId, branch);
       String progressId = api.getBuildProgress(buildId);
       String status = api.getProgressStatus(progressId);
       String progressUrl = api.getBuildUrl(progressId);

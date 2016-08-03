@@ -8,6 +8,9 @@
     <f:entry field="cfService" title="Choose Codefresh service">
       <f:select />
     </f:entry>
+    <f:entry field="cfBranch" title="Branch name (optional)">
+      <f:textbox />
+    </f:entry>
   </f:optionalBlock>
 
 </j:jelly>

@@ -105,10 +105,10 @@ public class CFApi {
         return jsonString;
     }
 
-    public String startBuild(String serviceId) throws MalformedURLException, IOException
+    public String startBuild(String serviceId, String branch) throws MalformedURLException, IOException
     {
         String buildUrl = httpsUrl + "/builds/" + serviceId ;
-
+        String buildOptions = "";
         URL buildEP = new URL(buildUrl);
         HttpsURLConnection conn = (HttpsURLConnection) buildEP.openConnection();
         conn.setRequestProperty("x-access-token", cfToken.getPlainText());
@@ -119,8 +119,16 @@ public class CFApi {
         conn.setInstanceFollowRedirects(true);
         conn.setRequestMethod("POST");
         
+        if (! branch.isEmpty())
+        {
+            conn.setRequestProperty("Content-Type","application/json");
+            JsonObject options = new JsonObject();
+            options.addProperty("branch", branch);
+            buildOptions = options.toString();
+        }
+        
         try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
-            outs.write("");
+            outs.write(buildOptions);
             outs.flush();
         }
         catch (Exception e)
