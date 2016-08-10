@@ -102,7 +102,9 @@ public class CFApi {
         conn.setRequestMethod("GET");
         InputStream is = conn.getInputStream();
         String jsonString = IOUtils.toString(is);
-        return jsonString;
+        JsonObject user = new JsonParser().parse(jsonString).getAsJsonObject();
+        String userName = user.get("userName").getAsString();
+        return userName;
     }
 
     public String startBuild(String serviceId, String branch) throws MalformedURLException, IOException
@@ -138,7 +140,7 @@ public class CFApi {
 
 
         InputStream is = conn.getInputStream();
-        return IOUtils.toString(is);
+        return IOUtils.toString(is).replace("\"", "");
     }
 
     public HttpsURLConnection getConnection(String urlString) throws MalformedURLException, IOException {

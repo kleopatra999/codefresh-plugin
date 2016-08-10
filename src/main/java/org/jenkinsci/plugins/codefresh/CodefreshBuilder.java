@@ -97,15 +97,31 @@ public class CodefreshBuilder extends Builder {
         URIish uri = remote.getURIs().get(0);
         String gitPath = uri.getPath();
         serviceId = profile.getServiceIdByPath(gitPath);
-        listener.getLogger().println("\nTriggering Codefresh build. Service: "+gitPath+".\n");
-
+        if (serviceId != null)
+        {
+            listener.getLogger().println("\nTriggering Codefresh build. Service: "+gitPath+".\n");
+        }
+        else
+        {
+            listener.getLogger().println("\nUser "+getDescriptor().getCfUser()+"has no Codefresh service defined for url "+gitPath+".\n Exiting.");
+            return false;
+        }
       }
       else
       {
 
         serviceId = profile.getServiceIdByName(cfService);
         branch  = cfBranch;
-        listener.getLogger().println("\nTriggering Codefresh build. Service: "+cfService+".\n");
+        if (serviceId != null)
+        {
+            listener.getLogger().println("\nTriggering Codefresh build. Service: "+cfService+".\n");
+        }
+        else
+        {
+            listener.getLogger().println("\nService Id not found for "+cfService+".\n Exiting.");
+            return false;
+        }
+        
 
       }
       CFApi api = new CFApi(getDescriptor().getCfToken());
@@ -151,13 +167,30 @@ public class CodefreshBuilder extends Builder {
         private CFApi api;
 
 
-        public FormValidation doTestConnection(@QueryParameter("cfToken") final String cfToken) throws IOException
+        public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken) throws IOException
         {
-             api = new CFApi(Secret.fromString(cfToken));
-             if (api.getUser() != null) {
-                return FormValidation.ok("Success");
-             }
-             return FormValidation.error("Couldn't connect");
+            String userName = null;
+            try {
+                api = new CFApi(Secret.fromString(cfToken));
+                userName = api.getUser();
+            }
+            catch (IOException e)
+            {
+                return FormValidation.error("Couldn't connect. Please check your token and internet connection.\n" + e.getMessage());
+            }
+                      
+            if (  userName != null )
+            {
+                if ( userName.equals(cfUser) )
+                {
+                   return FormValidation.ok("Success");
+                }
+                else
+                {
+                    return FormValidation.error("Username and token don't match");
+                }
+            }
+            return FormValidation.error("Couldn't connect. Please check your token and internet connection.");
         }
 
         @Override

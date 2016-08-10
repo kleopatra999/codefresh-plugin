@@ -9,6 +9,6 @@
       description="Enter Codefresh authorization token">
       <f:password />
     </f:entry>
-    <f:validateButton title="Test Connection" progress="Testing.." method="testConnection" with="cfToken" />
+    <f:validateButton title="Test Connection" progress="Testing.." method="testConnection" with="cfUser,cfToken" />
   </f:section>
 </j:jelly>
