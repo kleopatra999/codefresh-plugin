@@ -1,0 +1,20 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+    <f:entry title="Token" field="cfToken"
+      description="Enter Codefresh authorization token">
+      <f:password />
+    </f:entry>
+    <f:entry field="cfService" title="Choose Codefresh service">
+      <f:select />
+    </f:entry>
+    <f:entry field="cfBranch" title="Branch name (optional)">
+      <f:textbox />
+    </f:entry>
+    <f:optionalBlock name="launchCf" title="Launch a composition" checked="${instance.launchCf}">
+        <f:entry field="cfComposition" title="Choose composition to launch.">
+          <f:select />
+        </f:entry>
+    </f:optionalBlock>
+
+</j:jelly>
