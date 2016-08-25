@@ -11,19 +11,13 @@ import hudson.util.Secret;
  *
  * @author antweiss
  */
-public class CFService {
+public class CFComposition {
     private final String name;
     private final String id;
-    private final Secret cfToken;
-    private final String repoOwner;
-    private final String repoName;
 
-    public CFService(Secret cfToken, String gitRepo, String id, String repoOwner, String repoName ) {
+    public CFComposition(String gitRepo, String id ) {
         this.name = gitRepo;
-        this.cfToken = cfToken;
         this.id = id;
-        this.repoOwner = repoOwner;
-        this.repoName = repoName;
     }
 
     public String getName() {
@@ -34,12 +28,4 @@ public class CFService {
         return id;
     }
     
-    public String getRepoOwner() {
-        return repoOwner;
-    }
-    
-    public String getRepoName() {
-        return repoName;
-    }
-
 }

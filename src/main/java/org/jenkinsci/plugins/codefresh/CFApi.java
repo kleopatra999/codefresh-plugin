@@ -82,7 +82,10 @@ public class CFApi {
         JsonArray serviceList = new JsonParser().parse(jsonString).getAsJsonArray();
         for (int i = 0; i < serviceList.size(); i++) {
             JsonObject obj = (JsonObject)serviceList.get(i);
-            services.add(new CFService(cfToken, obj.get("name").getAsString(), obj.get("_id").getAsString()));
+            services.add(new CFService(cfToken, obj.get("name").getAsString(), 
+                                                obj.get("_id").getAsString(),
+                                                obj.get("repoOwner").getAsString(),
+                                                obj.get("repoName").getAsString()));
         }
         return services;
     }
@@ -185,4 +188,95 @@ public class CFApi {
         String buildUrl = "https://g.codefresh.io" + "/process/" + progressId;
         return buildUrl;
     }
+
+    String launchService(String serviceId, String repoOwner, String repoName, String branch) throws Exception {
+        String launchUrl = httpsUrl + "/runtime/testit";
+        String launchOptions = "";
+       // URL launchEP = new URL(launchUrl);
+        HttpsURLConnection conn = getConnection(launchUrl);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type","application/json");
+      
+        JsonObject options = new JsonObject();
+        
+        options.addProperty("repoOwner", repoOwner);
+        options.addProperty("repoName", repoName);
+        options.addProperty("branch", branch);
+      
+        launchOptions = options.toString();
+        
+        try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
+            outs.write(launchOptions);
+            outs.flush();
+        }
+        catch (Exception e)
+        {
+            throw e;
+        }
+
+
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
+        String progressId = progress.get("id").getAsString();
+        return progressId;
+    }
+    
+    String launchComposition(String compositionId) throws Exception {
+        String launchUrl = httpsUrl + "/compositions/"+compositionId+"/run";
+        String launchOptions = "";
+        HttpsURLConnection conn = getConnection(launchUrl);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type","application/json");
+      
+        //JsonObject options = new JsonObject();
+        //launchOptions = options.toString();
+        
+        try (OutputStreamWriter outs = new OutputStreamWriter(conn.getOutputStream(),"UTF-8")) {
+            outs.write(launchOptions);
+            outs.flush();
+        }
+        catch (Exception e)
+        {
+            throw e;
+        }
+
+
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
+        String progressId = progress.get("id").getAsString();
+        return progressId;
+    }
+
+    String getEnvUrl(String progressId) throws IOException {
+        String progressUrl = httpsUrl + "/progress/" + progressId;
+        HttpsURLConnection conn = getConnection(progressUrl);
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonObject progress = new JsonParser().parse(jsonString).getAsJsonObject();
+        JsonObject data = progress.getAsJsonObject("data");
+        String envUrl = data.get("testitUrl").getAsString();
+        
+        return envUrl;
+    }
+    
+    public List<CFComposition> getCompositions() throws MalformedURLException, IOException
+    {
+        String compositionUrl = httpsUrl + "/compositions";
+        HttpsURLConnection conn = getConnection(compositionUrl);
+        List<CFComposition> compositions = new ArrayList<CFComposition>();
+        conn.setRequestMethod("GET");
+        InputStream is = conn.getInputStream();
+        String jsonString = IOUtils.toString(is);
+        JsonArray compositionList = new JsonParser().parse(jsonString).getAsJsonArray();
+        for (int i = 0; i < compositionList.size(); i++) {
+            JsonObject obj = (JsonObject)compositionList.get(i);
+            compositions.add(new CFComposition(obj.get("name").getAsString(), 
+                                                obj.get("_id").getAsString()));
+        }
+        return compositions;
+    }
+    
 }

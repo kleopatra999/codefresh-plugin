@@ -17,6 +17,7 @@ public class CFProfile {
     private final String cfUser;
     private final Secret cfToken;
     private List<CFService> services;
+    private List<CFComposition> compositions;
     private CFApi api;
     //private List<CFService> services;
 
@@ -25,6 +26,7 @@ public class CFProfile {
         this.cfToken = cfToken;
         this.api = new CFApi(this.cfToken);
         this.services = api.getServices();
+        this.compositions = api.getCompositions();
     }
 
     public String getUser(){
@@ -68,5 +70,34 @@ public class CFProfile {
         }
         return null;
     }
+    
+    String getServiceRepoOwner(String serviceId) {
+        for (CFService service: services){
+            if (service.getId().equals(serviceId))
+            {
+                return service.getRepoOwner();
+            }
+        }
+        return null;
+    }
 
+    String getServiceRepoName(String serviceId) {
+        for (CFService service: services){
+            if (service.getId().equals(serviceId))
+            {
+                return service.getRepoName();
+            }
+        }
+        return null;
+    }
+
+    String getCompositionIdByName(String compositionName) {
+        for (CFComposition composition: compositions){
+            if (composition.getName().equals(compositionName))
+            {
+                return composition.getId();
+            }
+        }
+        return null;
+    }
 }

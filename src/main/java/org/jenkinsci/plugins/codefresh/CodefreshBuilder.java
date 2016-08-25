@@ -22,171 +22,221 @@ import java.io.IOException;
 import static java.lang.Thread.sleep;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.URIish;
 import org.kohsuke.stapler.QueryParameter;
 
-
 public class CodefreshBuilder extends Builder {
 
-    private boolean launch;
+    private final boolean launchCf;
+    private boolean buildCf;
     private final String cfService;
+    private final String cfComposition;
     private final boolean selectService;
     private final String cfBranch;
 
     @DataBoundConstructor
-    public CodefreshBuilder(Boolean launch, SelectService selectService) {
-        this.launch = launch;
+    public CodefreshBuilder(LaunchComposition launchCf, Boolean build, SelectService selectService) {
+        this.buildCf = build;
 
         if (selectService != null) {
             this.cfService = selectService.cfService;
             this.cfBranch = selectService.cfBranch;
             this.selectService = true;
-        }
-        else
-        {
+        } else {
             this.selectService = false;
             this.cfService = null;
             this.cfBranch = "";
         }
+        
+        if (launchCf != null) {
+            this.cfComposition = launchCf.cfComposition;   
+            this.launchCf = true;
+        } else {
+            this.launchCf = false;
+            this.cfComposition = null;
+        }
 
     }
 
-    public static class SelectService
-    {
+    public static class LaunchComposition {
+
+        private final String cfComposition;
+   
+        @DataBoundConstructor
+        public LaunchComposition(String cfComposition) {
+            this.cfComposition = cfComposition;
+        }
+    }
+
+    public static class SelectService {
+
         private final String cfService;
         private final String cfBranch;
 
         @DataBoundConstructor
-        public SelectService(String cfService, String cfBranch)
-        {
+        public SelectService(String cfService, String cfBranch) {
             this.cfService = cfService;
             this.cfBranch = cfBranch;
         }
     }
+    public boolean isLaunchCf() {
+        return launchCf;
+    }
 
-    public boolean isLaunch() {
-        return launch;
+    public boolean isBuild() {
+        return buildCf;
     }
 
     public String getCfService() {
         return cfService;
     }
 
-    public boolean isSelectService(){
+    public boolean isSelectService() {
         return selectService;
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
 
-      CFProfile profile  = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
-      String serviceId = "";
-      String branch = "";
-      
-      if (cfService == null)
-      {
-        SCM scm = build.getProject().getScm();
-        if (!(scm instanceof GitSCM)) {
-            return false;
+        CFProfile profile = new CFProfile(getDescriptor().getCfUser(), getDescriptor().getCfToken());
+        String serviceId = "";
+        String gitPath = "";
+        String branch = "";
+        Boolean exitFlag = false;
+
+    
+        CFApi api = new CFApi(getDescriptor().getCfToken());
+        if (buildCf) {
+                String serviceName = this.getCfService();
+
+                if (serviceName == null) {
+                    SCM scm = build.getProject().getScm();
+                    if (!(scm instanceof GitSCM)) {
+                        return false;
+                    }
+
+                    final GitSCM gitSCM = (GitSCM) scm;
+                    branch = gitSCM.getBranches().get(0).getName().replaceFirst("\\*\\/", "");
+                    RemoteConfig remote = gitSCM.getRepositories().get(0);
+                    URIish uri = remote.getURIs().get(0);
+                    gitPath = uri.getPath();
+                    serviceName = gitPath.split("/")[2].split("\\.")[0];
+                    serviceId = profile.getServiceIdByPath(gitPath);
+                    if (serviceId == null) {
+                        listener.getLogger().println("\nUser " + getDescriptor().getCfUser() + "has no Codefresh service defined for url " + gitPath + ".\n Exiting.");
+                        return false;
+                    }
+                } else {
+
+                    serviceId = profile.getServiceIdByName(cfService);
+                    branch = cfBranch;
+                    if (serviceId == null) {
+                        listener.getLogger().println("\nService Id not found for " + cfService + ".\n Exiting.");
+                        return false;
+                    }
+
+                }
+
+            listener.getLogger().println("\nTriggering Codefresh build. Service: " + serviceName + ".\n");
+
+            String buildId = api.startBuild(serviceId, branch);
+            String progressId = api.getBuildProgress(buildId);
+            String status = api.getProgressStatus(progressId);
+            String progressUrl = api.getBuildUrl(progressId);
+            while (status.equals("running")) {
+                listener.getLogger().println("Codefresh build running - " + progressUrl + "\n Waiting 5 seconds...");
+                Thread.sleep(5 * 1000);
+                status = api.getProgressStatus(progressId);
+            }
+
+            switch (status) {
+                case "success":
+                    if (!launchCf) {
+                        build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    }
+                    listener.getLogger().println("Codefresh build successfull!");
+                    break;
+                case "error":
+                    build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    listener.getLogger().println("Codefresh build failed!");
+                    return false;
+                default:
+                    build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
+                    listener.getLogger().println("Codefresh build exited with status " + status + ".");
+                    return false;
+            }
         }
 
-        final GitSCM gitSCM = (GitSCM) scm;
-        branch = gitSCM.getBranches().get(0).getName().replaceFirst("\\*\\/", "");
-        RemoteConfig remote = gitSCM.getRepositories().get(0);
-        URIish uri = remote.getURIs().get(0);
-        String gitPath = uri.getPath();
-        serviceId = profile.getServiceIdByPath(gitPath);
-        if (serviceId != null)
-        {
-            listener.getLogger().println("\nTriggering Codefresh build. Service: "+gitPath+".\n");
-        }
-        else
-        {
-            listener.getLogger().println("\nUser "+getDescriptor().getCfUser()+"has no Codefresh service defined for url "+gitPath+".\n Exiting.");
-            return false;
-        }
-      }
-      else
-      {
+        if (launchCf) {
+            try {
+                listener.getLogger().println("*******\n");
+                String compositionId = profile.getCompositionIdByName(cfComposition);
+                String launchId = api.launchComposition(compositionId);
+                String status = api.getProgressStatus(launchId);
+                String processUrl = api.getBuildUrl(launchId);
+                while (status.equals("running")) {
+                    listener.getLogger().println("Launching Codefresh composition environment: "+cfComposition+".\n Waiting 5 seconds...");
+                    Thread.sleep(5 * 1000);
+                    status = api.getProgressStatus(launchId);
+                }
 
-        serviceId = profile.getServiceIdByName(cfService);
-        branch  = cfBranch;
-        if (serviceId != null)
-        {
-            listener.getLogger().println("\nTriggering Codefresh build. Service: "+cfService+".\n");
-        }
-        else
-        {
-            listener.getLogger().println("\nService Id not found for "+cfService+".\n Exiting.");
-            return false;
-        }
-        
+                switch (status) {
+                    case "success":
+                        String envUrl = api.getEnvUrl(launchId);
+                        build.addAction(new CodefreshBuildBadgeAction(envUrl, status));
+                        listener.getLogger().println("Codefresh environment launched successfully - " + envUrl);
+                        return true;
+                    case "error":
+                        build.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        listener.getLogger().println("Codefresh enironment launch failed!");
+                        return false;
+                    default:
+                        build.addAction(new CodefreshBuildBadgeAction(processUrl, status));
+                        listener.getLogger().println("Codefresh environment launch exited with status " + status + ".");
+                        return false;
+                }
+            } catch (Exception ex) {
+                
+                Logger.getLogger(CodefreshBuilder.class.getName()).log(Level.SEVERE, null, ex);
+                listener.getLogger().println("Codefresh environment launch failed with exception: " + ex.getMessage() + ".");
+                build.addAction(new CodefreshBuildBadgeAction("", "error"));
+                return false;
+            }
 
-      }
-      CFApi api = new CFApi(getDescriptor().getCfToken());
-      String buildId = api.startBuild(serviceId, branch);
-      String progressId = api.getBuildProgress(buildId);
-      String status = api.getProgressStatus(progressId);
-      String progressUrl = api.getBuildUrl(progressId);
-      while (status.equals("running"))
-      {
-          listener.getLogger().println("Codefresh build running - "+progressUrl+"\n Waiting 5 seconds...");
-          Thread.sleep(5 * 1000);
-          status = api.getProgressStatus(progressId);
-      }
-      //build.addAction(new CodefreshAction(progressUrl));
-      build.addAction(new CodefreshBuildBadgeAction(progressUrl, status));
-      switch (status) {
-          case "success":
-              listener.getLogger().println("Codefresh build successfull!");
-              return true;
-          case "error":
-              listener.getLogger().println("Codefresh build failed!");
-              return false;
-          default:
-              listener.getLogger().println("Codefresh status "+status+" unclassified.");
-              return false;
-      }
+        }
+        listener.getLogger().println("Codefresh - neither build nor composition launch was selected.\n Are you sure that's what you meant?" );      
+        return true;
 
     }
-
-
-
 
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl)super.getDescriptor();
+        return (DescriptorImpl) super.getDescriptor();
     }
-
 
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+
         private String cfUser;
         private Secret cfToken;
         private CFApi api;
 
-
-        public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken) throws IOException
-        {
+        public FormValidation doTestConnection(@QueryParameter("cfUser") final String cfUser, @QueryParameter("cfToken") final String cfToken) throws IOException {
             String userName = null;
             try {
                 api = new CFApi(Secret.fromString(cfToken));
                 userName = api.getUser();
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 return FormValidation.error("Couldn't connect. Please check your token and internet connection.\n" + e.getMessage());
             }
-                      
-            if (  userName != null )
-            {
-                if ( userName.equals(cfUser) )
-                {
-                   return FormValidation.ok("Success");
-                }
-                else
-                {
+
+            if (userName != null) {
+                if (userName.equals(cfUser)) {
+                    return FormValidation.ok("Success");
+                } else {
                     return FormValidation.error("Username and token don't match");
                 }
             }
@@ -213,9 +263,8 @@ public class CodefreshBuilder extends Builder {
             cfUser = formData.getString("cfUser");
             cfToken = Secret.fromString(formData.getString("cfToken"));
             save();
-            return super.configure(req,formData);
+            return super.configure(req, formData);
         }
-
 
         public String getCfUser() {
             return cfUser;
@@ -225,24 +274,38 @@ public class CodefreshBuilder extends Builder {
             return cfToken;
         }
 
-
-        public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws  IOException, MalformedURLException {
+        public ListBoxModel doFillCfServiceItems(@QueryParameter("cfService") String cfService) throws IOException, MalformedURLException {
             ListBoxModel items = new ListBoxModel();
-            if (cfToken == null){
+            if (cfToken == null) {
                 throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
             }
             try {
                 api = new CFApi(cfToken);
-                for (CFService srv: api.getServices())
-                {
+                for (CFService srv : api.getServices()) {
                     String name = srv.getName();
                     items.add(new Option(name, name, cfService.equals(name)));
 
                 }
+            } catch (IOException e) {
+                throw e;
             }
-            catch (IOException e)
-            {
-                    throw e;
+            return items;
+        }
+        
+        public ListBoxModel doFillCfCompositionItems(@QueryParameter("cfComposition") String cfComposition) throws IOException, MalformedURLException {
+            ListBoxModel items = new ListBoxModel();
+            if (cfToken == null) {
+                throw new IOException("No Codefresh Integration Defined!!! Please configure in System Settings.");
+            }
+            try {
+                api = new CFApi(cfToken);
+                for (CFComposition comp : api.getCompositions()) {
+                    String name = comp.getName();
+                    items.add(new Option(name, name, cfComposition.equals(name)));
+
+                }
+            } catch (IOException e) {
+                throw e;
             }
             return items;
         }
@@ -259,19 +322,19 @@ public class CodefreshBuilder extends Builder {
             super();
             this.buildUrl = buildUrl;
             this.buildStatus = buildStatus;
-                switch (buildStatus) {
-                    case "success":
-                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
-                        break;
-                    case "unstable":
-                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_yellow.png";
-                        break;
-                    case "error":
-                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_red.png";
-                        break;
-                    default:
-                        this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
-                }
+            switch (buildStatus) {
+                case "success":
+                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_green.png";
+                    break;
+                case "unstable":
+                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_yellow.png";
+                    break;
+                case "error":
+                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_red.png";
+                    break;
+                default:
+                    this.iconFile = "/plugin/codefresh/images/16x16/leaves_red.png";
+            }
         }
 
         @Override
